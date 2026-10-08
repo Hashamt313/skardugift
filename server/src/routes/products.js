@@ -1,0 +1,5 @@
+import { Router } from 'express'; import { requireDb } from '../config/supabase.js';
+const router=Router();
+router.get('/',async(req,res,next)=>{try{let q=requireDb().from('products').select('*, product_images(url,alt_text,sort_order), product_variants(id,name,price,stock_quantity)').eq('status','published').is('deleted_at',null).order('created_at',{ascending:false});if(req.query.featured==='true')q=q.eq('featured',true);if(req.query.category)q=q.eq('category_id',req.query.category);const {data,error}=await q.range((Number(req.query.page||1)-1)*24,Number(req.query.page||1)*24-1);if(error)throw error;res.json({data})}catch(e){next(e)}});
+router.get('/:slug',async(req,res,next)=>{try{const {data,error}=await requireDb().from('products').select('*, product_images(url,alt_text,sort_order), product_variants(*)').eq('slug',req.params.slug).eq('status','published').single();if(error)throw Object.assign(new Error('Product not found'),{status:404});res.json(data)}catch(e){next(e)}});
+export default router;
